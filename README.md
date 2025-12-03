@@ -106,19 +106,19 @@ Ahoy matey! Search for cinematic treasure using our advanced filtering system.
 **Examples:**
 ```bash
 # Search by movie name (partial match)
-http://localhost:8080/movies/search?name=Prison
+curl "http://localhost:8080/movies/search?name=Prison"
 
 # Search by specific treasure map ID
-http://localhost:8080/movies/search?id=5
+curl "http://localhost:8080/movies/search?id=5"
 
 # Search by adventure type (genre)
-http://localhost:8080/movies/search?genre=Drama
+curl "http://localhost:8080/movies/search?genre=Drama"
 
 # Combine multiple search criteria
-http://localhost:8080/movies/search?name=Family&genre=Crime/Drama
+curl "http://localhost:8080/movies/search?name=Family&genre=Crime/Drama"
 
 # Case-insensitive search
-http://localhost:8080/movies/search?name=SPACE&genre=adventure/sci-fi
+curl "http://localhost:8080/movies/search?name=SPACE&genre=adventure/sci-fi"
 ```
 
 **Response:**
@@ -138,8 +138,8 @@ Returns an HTML page with detailed movie information and customer reviews.
 - `id` (path parameter): Movie ID (1-12)
 
 **Example:**
-```
-http://localhost:8080/movies/1/details
+```bash
+curl "http://localhost:8080/movies/1/details"
 ```
 
 ## 🏴‍☠️ Pirate Search Features
