@@ -150,7 +150,8 @@ public class MoviesController {
 
         if (validationError != null) {
             // Redirect back with error parameter
-            return "redirect:/movies/" + movieId + "/details?error=" + validationError.replace(" ", "+");
+            return "redirect:/movies/" + movieId + "/details?error=" + 
+                   URLEncoder.encode(validationError, StandardCharsets.UTF_8);
         }
 
         // Get or create avatar for this session
