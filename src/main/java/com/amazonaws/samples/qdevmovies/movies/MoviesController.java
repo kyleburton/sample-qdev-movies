@@ -39,14 +39,6 @@ public class MoviesController {
         logger.info("Ahoy! Searching for treasure with criteria - name: {}, id: {}, genre: {}", name, id, genre);
         
         try {
-            // Validate ID parameter if provided
-            if (id != null && id <= 0) {
-                logger.warn("Invalid movie ID provided: {}", id);
-                model.addAttribute("title", "Arrr! Invalid Search Parameters");
-                model.addAttribute("message", "Blimey! That ID be not a valid treasure map number, matey!");
-                return "error";
-            }
-            
             List<Movie> searchResults = movieService.searchMovies(name, id, genre);
             
             // Add search results and parameters to model
@@ -68,10 +60,20 @@ public class MoviesController {
             logger.info("Search completed successfully. Found {} movies", searchResults.size());
             return "movies";
             
-        } catch (Exception e) {
-            logger.error("Error occurred during movie search: {}", e.getMessage(), e);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid search parameters provided: {}", e.getMessage());
+            model.addAttribute("title", "Arrr! Invalid Search Parameters");
+            model.addAttribute("message", "Blimey! " + e.getMessage() + " Check yer search criteria, matey!");
+            return "error";
+        } catch (MovieSearchException e) {
+            logger.error("Movie search operation failed: {}", e.getMessage(), e);
             model.addAttribute("title", "Arrr! Search Failed");
-            model.addAttribute("message", "Blimey! Something went wrong while searching for yer treasure. Try again, matey!");
+            model.addAttribute("message", "Blimey! " + e.getMessage() + " Try again, matey!");
+            return "error";
+        } catch (RuntimeException e) {
+            logger.error("Unexpected error occurred during movie search: {}", e.getMessage(), e);
+            model.addAttribute("title", "Arrr! Unexpected Trouble");
+            model.addAttribute("message", "Blimey! Something unexpected went wrong while searching for yer treasure. The ship's crew be working on it, matey!");
             return "error";
         }
     }
