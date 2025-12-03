@@ -5,10 +5,155 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Free Movies This Month</title>
     <link rel="stylesheet" th:href="@{/css/movies.css}">
+    <style>
+        .search-treasure-chest {
+            background: linear-gradient(135deg, #8B4513, #A0522D);
+            border: 3px solid #DAA520;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .search-treasure-chest h2 {
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+        .search-field {
+            display: flex;
+            flex-direction: column;
+        }
+        .search-field label {
+            color: #FFD700;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .search-field input, .search-field select {
+            padding: 8px 12px;
+            border: 2px solid #DAA520;
+            border-radius: 8px;
+            background: #FFF8DC;
+            font-size: 14px;
+        }
+        .search-field input:focus, .search-field select:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+        .search-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            grid-column: 1 / -1;
+            margin-top: 10px;
+        }
+        .pirate-btn {
+            background: linear-gradient(135deg, #DAA520, #FFD700);
+            color: #8B4513;
+            border: 2px solid #8B4513;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .pirate-btn:hover {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .search-message {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #DAA520;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            color: #8B4513;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .back-to-all {
+            text-align: center;
+            margin: 20px 0;
+        }
+        @media (max-width: 768px) {
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+            .search-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Free Movies This Month</h1>
+        
+        <!-- Pirate-themed Search Form -->
+        <div class="search-treasure-chest">
+            <h2>🏴‍☠️ Search for Cinematic Treasure, Matey! ⚓</h2>
+            <form class="search-form" th:action="@{/movies/search}" method="get">
+                <div class="search-field">
+                    <label for="name">🎬 Movie Name (Partial Match):</label>
+                    <input type="text" id="name" name="name" 
+                           th:value="${searchName}" 
+                           placeholder="Enter movie name, ye scallywag...">
+                </div>
+                
+                <div class="search-field">
+                    <label for="id">🗺️ Treasure Map ID:</label>
+                    <input type="number" id="id" name="id" 
+                           th:value="${searchId}" 
+                           placeholder="Enter movie ID..." min="1">
+                </div>
+                
+                <div class="search-field">
+                    <label for="genre">⚔️ Adventure Type (Genre):</label>
+                    <select id="genre" name="genre">
+                        <option value="">All genres, me hearty!</option>
+                        <option value="Drama" th:selected="${searchGenre == 'Drama'}">Drama</option>
+                        <option value="Crime/Drama" th:selected="${searchGenre == 'Crime/Drama'}">Crime/Drama</option>
+                        <option value="Action/Crime" th:selected="${searchGenre == 'Action/Crime'}">Action/Crime</option>
+                        <option value="Drama/Romance" th:selected="${searchGenre == 'Drama/Romance'}">Drama/Romance</option>
+                        <option value="Action/Sci-Fi" th:selected="${searchGenre == 'Action/Sci-Fi'}">Action/Sci-Fi</option>
+                        <option value="Adventure/Fantasy" th:selected="${searchGenre == 'Adventure/Fantasy'}">Adventure/Fantasy</option>
+                        <option value="Adventure/Sci-Fi" th:selected="${searchGenre == 'Adventure/Sci-Fi'}">Adventure/Sci-Fi</option>
+                        <option value="Drama/History" th:selected="${searchGenre == 'Drama/History'}">Drama/History</option>
+                        <option value="Drama/Thriller" th:selected="${searchGenre == 'Drama/Thriller'}">Drama/Thriller</option>
+                    </select>
+                </div>
+                
+                <div class="search-buttons">
+                    <button type="submit" class="pirate-btn">🔍 Hunt for Treasure!</button>
+                    <a th:href="@{/movies}" class="pirate-btn">🏴‍☠️ Show All Treasure</a>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Search Results Message -->
+        <div th:if="${searchMessage}" class="search-message" th:text="${searchMessage}">
+            Search results message
+        </div>
+        
+        <!-- Back to All Movies Link (shown only when displaying search results) -->
+        <div th:if="${isSearchResult}" class="back-to-all">
+            <a th:href="@{/movies}" class="pirate-btn">⚓ Return to All Treasure</a>
+        </div>
+        
         <div class="movies-grid">
             <div class="movie-card" th:each="movie : ${movies}">
                 <div class="movie-icon" th:text="${movie.icon}">🎬</div>
@@ -28,6 +173,12 @@
                 </div>
                 <a th:href="@{/movies/{id}/details(id=${movie.id})}" class="details-btn">View Details</a>
             </div>
+        </div>
+        
+        <!-- Empty Results Message -->
+        <div th:if="${movies.empty}" class="search-message">
+            <p>🏴‍☠️ Arrr! The treasure chest be empty, matey!</p>
+            <p>Try adjusting yer search criteria and hunt again!</p>
         </div>
     </div>
 </body>
