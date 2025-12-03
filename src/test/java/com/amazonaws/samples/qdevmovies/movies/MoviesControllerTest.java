@@ -12,6 +12,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MoviesControllerTest {
 
@@ -29,7 +30,11 @@ public class MoviesControllerTest {
         mockMovieService = new MovieService() {
             @Override
             public List<Movie> getAllMovies() {
-                return Arrays.asList(new Movie(1L, "Test Movie", "Test Director", 2023, "Drama", "Test description", 120, 4.5));
+                return Arrays.asList(
+                    new Movie(1L, "Test Movie", "Test Director", 2023, "Drama", "Test description", 120, 4.5),
+                    new Movie(2L, "Action Movie", "Action Director", 2022, "Action", "Action description", 110, 4.0),
+                    new Movie(3L, "Comedy Movie", "Comedy Director", 2021, "Comedy", "Comedy description", 95, 3.5)
+                );
             }
             
             @Override
@@ -38,6 +43,34 @@ public class MoviesControllerTest {
                     return Optional.of(new Movie(1L, "Test Movie", "Test Director", 2023, "Drama", "Test description", 120, 4.5));
                 }
                 return Optional.empty();
+            }
+            
+            @Override
+            public List<Movie> searchMovies(String name, Long id, String genre) {
+                List<Movie> allMovies = getAllMovies();
+                List<Movie> results = new ArrayList<>();
+                
+                for (Movie movie : allMovies) {
+                    boolean matches = true;
+                    
+                    if (name != null && !name.trim().isEmpty()) {
+                        matches = matches && movie.getMovieName().toLowerCase().contains(name.toLowerCase());
+                    }
+                    
+                    if (id != null && id > 0) {
+                        matches = matches && movie.getId() == id;
+                    }
+                    
+                    if (genre != null && !genre.trim().isEmpty()) {
+                        matches = matches && movie.getGenre().toLowerCase().equals(genre.toLowerCase());
+                    }
+                    
+                    if (matches) {
+                        results.add(movie);
+                    }
+                }
+                
+                return results;
             }
         };
         
@@ -86,7 +119,154 @@ public class MoviesControllerTest {
     @Test
     public void testMovieServiceIntegration() {
         List<Movie> movies = mockMovieService.getAllMovies();
+        assertEquals(3, movies.size());
+        assertEquals("Test Movie", movies.get(0).getMovieName());
+    }
+
+    // New tests for search functionality
+    @Test
+    public void testSearchMoviesWithName() {
+        String result = moviesController.searchMovies("Test", null, null, model);
+        
+        assertNotNull(result);
+        assertEquals("movies", result);
+        
+        @SuppressWarnings("unchecked")
+        List<Movie> movies = (List<Movie>) model.getAttribute("movies");
+        assertNotNull(movies);
         assertEquals(1, movies.size());
         assertEquals("Test Movie", movies.get(0).getMovieName());
+        
+        assertTrue((Boolean) model.getAttribute("isSearchResult"));
+        assertNotNull(model.getAttribute("searchMessage"));
+    }
+
+    @Test
+    public void testSearchMoviesWithId() {
+        String result = moviesController.searchMovies(null, 2L, null, model);
+        
+        assertNotNull(result);
+        assertEquals("movies", result);
+        
+        @SuppressWarnings("unchecked")
+        List<Movie> movies = (List<Movie>) model.getAttribute("movies");
+        assertNotNull(movies);
+        assertEquals(1, movies.size());
+        assertEquals("Action Movie", movies.get(0).getMovieName());
+        
+        assertTrue((Boolean) model.getAttribute("isSearchResult"));
+        assertEquals(2L, model.getAttribute("searchId"));
+    }
+
+    @Test
+    public void testSearchMoviesWithGenre() {
+        String result = moviesController.searchMovies(null, null, "Comedy", model);
+        
+        assertNotNull(result);
+        assertEquals("movies", result);
+        
+        @SuppressWarnings("unchecked")
+        List<Movie> movies = (List<Movie>) model.getAttribute("movies");
+        assertNotNull(movies);
+        assertEquals(1, movies.size());
+        assertEquals("Comedy Movie", movies.get(0).getMovieName());
+        
+        assertTrue((Boolean) model.getAttribute("isSearchResult"));
+        assertEquals("Comedy", model.getAttribute("searchGenre"));
+    }
+
+    @Test
+    public void testSearchMoviesWithMultipleCriteria() {
+        String result = moviesController.searchMovies("Action", 2L, "Action", model);
+        
+        assertNotNull(result);
+        assertEquals("movies", result);
+        
+        @SuppressWarnings("unchecked")
+        List<Movie> movies = (List<Movie>) model.getAttribute("movies");
+        assertNotNull(movies);
+        assertEquals(1, movies.size());
+        assertEquals("Action Movie", movies.get(0).getMovieName());
+        
+        assertTrue((Boolean) model.getAttribute("isSearchResult"));
+        assertEquals("Action", model.getAttribute("searchName"));
+        assertEquals(2L, model.getAttribute("searchId"));
+        assertEquals("Action", model.getAttribute("searchGenre"));
+    }
+
+    @Test
+    public void testSearchMoviesNoResults() {
+        String result = moviesController.searchMovies("NonExistent", null, null, model);
+        
+        assertNotNull(result);
+        assertEquals("movies", result);
+        
+        @SuppressWarnings("unchecked")
+        List<Movie> movies = (List<Movie>) model.getAttribute("movies");
+        assertNotNull(movies);
+        assertTrue(movies.isEmpty());
+        
+        assertTrue((Boolean) model.getAttribute("isSearchResult"));
+        String searchMessage = (String) model.getAttribute("searchMessage");
+        assertNotNull(searchMessage);
+        assertTrue(searchMessage.contains("No treasure found"));
+    }
+
+    @Test
+    public void testSearchMoviesWithInvalidId() {
+        String result = moviesController.searchMovies(null, -1L, null, model);
+        
+        assertNotNull(result);
+        assertEquals("error", result);
+        
+        String title = (String) model.getAttribute("title");
+        String message = (String) model.getAttribute("message");
+        assertNotNull(title);
+        assertNotNull(message);
+        assertTrue(title.contains("Invalid Search Parameters"));
+        assertTrue(message.contains("not a valid treasure map number"));
+    }
+
+    @Test
+    public void testSearchMoviesWithEmptyParameters() {
+        String result = moviesController.searchMovies("", null, "", model);
+        
+        assertNotNull(result);
+        assertEquals("movies", result);
+        
+        @SuppressWarnings("unchecked")
+        List<Movie> movies = (List<Movie>) model.getAttribute("movies");
+        assertNotNull(movies);
+        assertEquals(3, movies.size()); // Should return all movies when no valid criteria provided
+        
+        assertTrue((Boolean) model.getAttribute("isSearchResult"));
+    }
+
+    @Test
+    public void testSearchMoviesCaseInsensitive() {
+        String result = moviesController.searchMovies("TEST", null, null, model);
+        
+        assertNotNull(result);
+        assertEquals("movies", result);
+        
+        @SuppressWarnings("unchecked")
+        List<Movie> movies = (List<Movie>) model.getAttribute("movies");
+        assertNotNull(movies);
+        assertEquals(1, movies.size());
+        assertEquals("Test Movie", movies.get(0).getMovieName());
+    }
+
+    @Test
+    public void testSearchMoviesPartialNameMatch() {
+        String result = moviesController.searchMovies("Act", null, null, model);
+        
+        assertNotNull(result);
+        assertEquals("movies", result);
+        
+        @SuppressWarnings("unchecked")
+        List<Movie> movies = (List<Movie>) model.getAttribute("movies");
+        assertNotNull(movies);
+        assertEquals(1, movies.size());
+        assertEquals("Action Movie", movies.get(0).getMovieName());
     }
 }

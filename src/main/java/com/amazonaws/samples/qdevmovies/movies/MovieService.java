@@ -69,4 +69,46 @@ public class MovieService {
         }
         return Optional.ofNullable(movieMap.get(id));
     }
+
+    /**
+     * Search for movies based on provided criteria.
+     * Supports filtering by name (partial, case-insensitive), id (exact), and genre (exact, case-insensitive).
+     * Multiple parameters are combined with AND logic.
+     * 
+     * @param name Movie name to search for (partial match, case-insensitive)
+     * @param id Movie ID to search for (exact match)
+     * @param genre Movie genre to search for (exact match, case-insensitive)
+     * @return List of movies matching the search criteria
+     */
+    public List<Movie> searchMovies(String name, Long id, String genre) {
+        logger.info("Searching movies with criteria - name: {}, id: {}, genre: {}", name, id, genre);
+        
+        List<Movie> results = new ArrayList<>(movies);
+        
+        // Filter by name (partial, case-insensitive)
+        if (name != null && !name.trim().isEmpty()) {
+            String searchName = name.trim().toLowerCase();
+            results = results.stream()
+                    .filter(movie -> movie.getMovieName().toLowerCase().contains(searchName))
+                    .collect(ArrayList::new, (list, movie) -> list.add(movie), (list1, list2) -> list1.addAll(list2));
+        }
+        
+        // Filter by ID (exact match)
+        if (id != null && id > 0) {
+            results = results.stream()
+                    .filter(movie -> movie.getId() == id)
+                    .collect(ArrayList::new, (list, movie) -> list.add(movie), (list1, list2) -> list1.addAll(list2));
+        }
+        
+        // Filter by genre (exact, case-insensitive)
+        if (genre != null && !genre.trim().isEmpty()) {
+            String searchGenre = genre.trim().toLowerCase();
+            results = results.stream()
+                    .filter(movie -> movie.getGenre().toLowerCase().equals(searchGenre))
+                    .collect(ArrayList::new, (list, movie) -> list.add(movie), (list1, list2) -> list1.addAll(list2));
+        }
+        
+        logger.info("Search completed. Found {} movies matching criteria", results.size());
+        return results;
+    }
 }
