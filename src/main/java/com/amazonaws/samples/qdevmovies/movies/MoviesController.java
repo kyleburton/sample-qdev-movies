@@ -131,9 +131,10 @@ public class MoviesController {
 
     @PostMapping("/movies/{id}/details")
     public String addReview(@PathVariable("id") Long movieId,
-                           @RequestParam("userName") String userName,
-                           @RequestParam("rating") int rating,
-                           @RequestParam("comment") String comment,
+    public String addReview(@PathVariable("id") Long movieId,
+                           @RequestParam("userName") @Valid @Size(min=2, max=50) String userName,
+                           @RequestParam("rating") @Min(1) @Max(5) int rating,
+                           @RequestParam("comment") @Valid @Size(min=10, max=500) String comment,
                            HttpSession session) {
         logger.info("Adding review for movie ID: {}", movieId);
 
