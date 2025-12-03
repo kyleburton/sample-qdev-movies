@@ -70,7 +70,7 @@
         <div class="modal-content">
             <span class="close" onclick="closeReviewModal()">&times;</span>
             <h3>Add Your Review</h3>
-            <div th:if="${error}" class="error-message" th:text="${error}">Error message</div>
+            <div th:if="${error}" class="error-message" th:text="${#strings.escapeXml(error)}">Error message</div>
             <form method="POST" th:action="@{/movies/{id}/details(id=${movie.id})}" class="review-form" onsubmit="return validateForm()">
                 <div class="form-group">
                     <label for="userName">Your Name:</label>
