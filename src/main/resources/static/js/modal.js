@@ -113,7 +113,12 @@ function validateForm() {
     const ratingInput = document.getElementById('rating');
     
     if (!ratingInput.value || ratingInput.value === '') {
-        alert('Please select a rating before submitting your review.');
+        // Show error message in the modal instead of alert
+        const errorDiv = document.querySelector('.error-message');
+        if (errorDiv) {
+            errorDiv.textContent = 'Please select a rating before submitting your review.';
+            errorDiv.style.display = 'block';
+        }
         return false;
     }
     
