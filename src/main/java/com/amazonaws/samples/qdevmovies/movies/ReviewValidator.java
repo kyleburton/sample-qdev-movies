@@ -43,27 +43,10 @@ public class ReviewValidator {
         int wordCount = 0;
         
         // Outer loop through each character
-        for (int i = 0; i < comment.length(); i++) {
-            char currentChar = comment.charAt(i);
-            
-            // Check if this is the start of a word
-            if (currentChar != ' ') {
-                boolean isWordStart = true;
-                
-                // Inner loop to check if previous char was space
-                for (int j = 0; j < i; j++) {
-                    if (j == i - 1) {
-                        if (comment.charAt(j) != ' ') {
-                            isWordStart = false;
-                        }
-                    }
-                }
-                
-                if (isWordStart) {
-                    wordCount++;
-                }
-            }
-        }
+        // Efficient word counting using split
+        String comment = request.getComment().trim();
+        String[] words = comment.split("\\s+");
+        int wordCount = words.length;
         
         if (wordCount < 5) {
             return "Review must be at least 5 words";
