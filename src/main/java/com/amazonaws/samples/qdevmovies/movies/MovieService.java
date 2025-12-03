@@ -2,11 +2,13 @@ package com.amazonaws.samples.qdevmovies.movies;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 import org.springframework.stereotype.Service;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.InputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,9 +54,18 @@ public class MovieService {
                         movieObj.getDouble("imdbRating")
                     ));
                 }
+            } else {
+                logger.warn("Movies JSON file not found in resources");
             }
-        } catch (Exception e) {
-            logger.error("Failed to load movies from JSON: {}", e.getMessage());
+        } catch (JSONException e) {
+            logger.error("Failed to parse movies JSON: {}", e.getMessage(), e);
+            throw new MovieDataLoadException("Invalid JSON format in movies data file", e);
+        } catch (IOException e) {
+            logger.error("Failed to read movies JSON file: {}", e.getMessage(), e);
+            throw new MovieDataLoadException("Unable to read movies data file", e);
+        } catch (RuntimeException e) {
+            logger.error("Unexpected error loading movies from JSON: {}", e.getMessage(), e);
+            throw new MovieDataLoadException("Unexpected error occurred while loading movie data", e);
         }
         return movieList;
     }
@@ -68,5 +79,63 @@ public class MovieService {
             return Optional.empty();
         }
         return Optional.ofNullable(movieMap.get(id));
+    }
+
+    /**
+     * Search for movies based on provided criteria.
+     * Supports filtering by name (partial, case-insensitive), id (exact), and genre (exact, case-insensitive).
+     * Multiple parameters are combined with AND logic.
+     * 
+     * @param name Movie name to search for (partial match, case-insensitive)
+     * @param id Movie ID to search for (exact match)
+     * @param genre Movie genre to search for (exact match, case-insensitive)
+     * @return List of movies matching the search criteria
+     * @throws IllegalArgumentException if search parameters are invalid
+     * @throws MovieSearchException if search operation fails
+     */
+    public List<Movie> searchMovies(String name, Long id, String genre) {
+        logger.info("Searching movies with criteria - name: {}, id: {}, genre: {}", name, id, genre);
+        
+        try {
+            // Validate parameters
+            if (id != null && id <= 0) {
+                throw new IllegalArgumentException("Movie ID must be a positive number, but got: " + id);
+            }
+            
+            List<Movie> results = new ArrayList<>(movies);
+            
+            // Filter by name (partial, case-insensitive)
+            if (name != null && !name.trim().isEmpty()) {
+                String searchName = name.trim().toLowerCase();
+                results = results.stream()
+                        .filter(movie -> movie.getMovieName().toLowerCase().contains(searchName))
+                        .collect(ArrayList::new, (list, movie) -> list.add(movie), (list1, list2) -> list1.addAll(list2));
+            }
+            
+            // Filter by ID (exact match)
+            if (id != null && id > 0) {
+                results = results.stream()
+                        .filter(movie -> movie.getId() == id)
+                        .collect(ArrayList::new, (list, movie) -> list.add(movie), (list1, list2) -> list1.addAll(list2));
+            }
+            
+            // Filter by genre (exact, case-insensitive)
+            if (genre != null && !genre.trim().isEmpty()) {
+                String searchGenre = genre.trim().toLowerCase();
+                results = results.stream()
+                        .filter(movie -> movie.getGenre().toLowerCase().equals(searchGenre))
+                        .collect(ArrayList::new, (list, movie) -> list.add(movie), (list1, list2) -> list1.addAll(list2));
+            }
+            
+            logger.info("Search completed. Found {} movies matching criteria", results.size());
+            return results;
+            
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid search parameters: {}", e.getMessage());
+            throw e; // Re-throw to be handled by controller
+        } catch (RuntimeException e) {
+            logger.error("Unexpected error during movie search: {}", e.getMessage(), e);
+            throw new MovieSearchException("Failed to search movies due to unexpected error", e);
+        }
     }
 }

@@ -2,11 +2,13 @@ package com.amazonaws.samples.qdevmovies.movies;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 import org.springframework.stereotype.Service;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.InputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ArrayList;
@@ -39,8 +41,15 @@ public class ReviewService {
                     }
                 }
             }
-        } catch (Exception e) {
-            logger.error("Failed to load reviews for movie {}: {}", movieId, e.getMessage());
+        } catch (JSONException e) {
+            logger.error("Failed to parse reviews JSON for movie {}: {}", movieId, e.getMessage(), e);
+            // Return empty list for JSON parsing errors to allow graceful degradation
+        } catch (IOException e) {
+            logger.error("Failed to read reviews JSON file for movie {}: {}", movieId, e.getMessage(), e);
+            // Return empty list for IO errors to allow graceful degradation
+        } catch (RuntimeException e) {
+            logger.error("Unexpected error loading reviews for movie {}: {}", movieId, e.getMessage(), e);
+            // Return empty list for unexpected errors to allow graceful degradation
         }
         return reviews;
     }
